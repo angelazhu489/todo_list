@@ -65,7 +65,7 @@ class DatabasePersistence
 	end
 
 	private 
-	
+
 	def find_todos(list_id)
 		sql = "SELECT * FROM todos WHERE list_id = $1"
 		result = query(sql, list_id)
