@@ -12,17 +12,38 @@ class DatabasePersistence
 	end
 
 	def find_list(id)
-		sql = "SELECT * FROM lists WHERE id = $1"
+		# sql = "SELECT * FROM lists WHERE id = $1"
+		sql = <<~HEREDOC 
+			SELECT l.*, COUNT(t.id), COUNT(NULLIF(t.completed, true)) as todos_remain 
+				FROM lists AS l 
+				JOIN todos AS t ON l.id = t.list_id 
+				GROUP BY l.id
+				HAVING l.id = $1
+				ORDER BY l.id
+		HEREDOC
 		result = query(sql, id)
 		tuple = result.first
-		{ id: tuple["id"].to_i, name: tuple["name"], todos: find_todos(id) }
+		{ id: tuple["id"].to_i, 
+			name: tuple["name"], 
+			todos_count: tuple["count"].to_i, 
+			todos_remain: tuple["todos_remain"].to_i,
+			todos: find_todos(id) }
 	end
 
 	def all_lists
-		sql = "SELECT * FROM lists" 
+		sql = <<~HEREDOC 
+			SELECT l.*, COUNT(t.id), COUNT(NULLIF(t.completed, true)) as todos_remain 
+				FROM lists AS l 
+				JOIN todos AS t ON l.id = t.list_id 
+				GROUP BY l.id
+				ORDER BY l.id
+		HEREDOC
 		result = query(sql)
 		result.map do |tuple|
-			{ id: tuple["id"].to_i, name: tuple["name"], todos: find_todos(tuple["id"]) }
+			{ id: tuple["id"].to_i, 
+				name: tuple["name"], 
+				todos_count: tuple["count"].to_i, 
+				todos_remain: tuple["todos_remain"].to_i }
 		end
 	end
 
